@@ -1,0 +1,73 @@
+{
+  "name": "cowl",
+  "version": "1.0.0",
+  "main": "Cowl.js",
+  "bin": {
+    "Cowl": "Cowl.js"
+  },
+  "scripts": {
+    "test": "echo \"No tests configured\"",
+    "run": "Cowl",
+    "dev": "Cowl",
+    "semantic-release": "semantic-release",
+    "lint": "npx eslint . --ext .js",
+    "build": "echo \"No build step required\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NatanBack77/C-Watch.git"
+  },
+  "author": "Natabael",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/NatanBack77/C-Watch/issues"
+  },
+  "homepage": "https://github.com/NatanBack77/C-Watch#readme",
+  "dependencies": {
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^10.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^10.1.3",
+    "@semantic-release/npm": "^12.0.1",
+    "@semantic-release/release-notes-generator": "^10.0.3",
+    "semantic-release": "^24.0.0"
+  },
+  "release": {
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/npm",
+      "@semantic-release/changelog",
+      "@semantic-release/github",
+      [
+        "@semantic-release/git",
+        {
+          "assets": [
+            "CHANGELOG.md",
+            "package.json",
+            "Cowl.js"
+          ],
+          "message": "docs: ${nextRelease.version}"
+        }
+      ]
+    ]
+  },
+  "files": [
+    "Cowl.js",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "c",
+    "watch",
+    "gcc",
+    "compile",
+    "cli"
+  ],
+  "description": "CLI para monitorar, compilar e executar código C automaticamente"
+}
