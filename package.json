@@ -1,6 +1,6 @@
 {
-  "name": "cowl",
-  "version": "1.0.0",
+  "name": "@natabael/cowl",
+  "version": "1.0.2",
   "main": "Cowl.js",
   "bin": {
     "Cowl": "Cowl.js"
@@ -15,14 +15,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NatanBack77/C-Watch.git"
+    "url": "git+https://github.com/NatanBack77/cowl.git"
   },
   "author": "Natabael",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/NatanBack77/C-Watch/issues"
+    "url": "https://github.com/NatanBack77/cowl/issues"
   },
-  "homepage": "https://github.com/NatanBack77/C-Watch#readme",
+  "homepage": "https://github.com/NatanBack77/cowl#readme",
   "dependencies": {
     "yargs": "^17.7.2"
   },
@@ -57,7 +57,8 @@
   },
   "files": [
     "Cowl.js",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "assets/"
   ],
   "publishConfig": {
     "access": "public"
