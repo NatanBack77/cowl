@@ -1,9 +1,9 @@
 {
   "name": "@natabael/cowl",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "Cowl.js",
   "bin": {
-    "Cowl": "Cowl.js"
+    "cowl": "./Cowl.js"
   },
   "scripts": {
     "test": "echo \"No tests configured\"",
@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/NatanBack77/cowl#readme",
   "dependencies": {
+    "@natabael/cowl": "^1.0.4",
     "yargs": "^17.7.2"
   },
   "devDependencies": {

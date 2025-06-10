@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" alt="Logo do Cowl" width="200" />
+  <img src="https://raw.githubusercontent.com/NatanBack77/Cowl/main/assets/logo.png" alt="Logo do Cowl" width="200" />
 </p>
 
 <h1 align="center">
@@ -8,9 +8,9 @@
 </h1>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/cowl"><img src="https://img.shields.io/npm/v/cowl.svg" alt="NPM version"></a>
-  <a href="https://opencollective.com/cowl"><img src="https://opencollective.com/cowl/backers/badge.svg" alt="Backers"></a>
-  <a href="https://opencollective.com/cowl"><img src="https://opencollective.com/cowl/sponsors/badge.svg" alt="Sponsors"></a>
+  <a href="https://www.npmjs.com/package/@natabael/cowl"><img src="https://img.shields.io/npm/v/@natabael/cowl.svg" alt="NPM version"></a>
+  <a href="https://opencollective.com/cowl/backers"><img src="https://opencollective.com/cowl/backers/badge.svg" alt="Backers"></a>
+  <a href="https://opencollective.com/cowl/sponsors"><img src="https://opencollective.com/cowl/sponsors/badge.svg" alt="Sponsors"></a>
 </p>
 
 # cowl
@@ -21,17 +21,13 @@ CLI para monitorar, compilar e executar código C automaticamente. Inspirado na 
 
 ```bash
 # Instalação global via npm
-npm install -g cowl
+npm install -g @natabael/cowl
 ```
 
-Ou, para testar localmente:
+Ou, para instalar localmente:
 
 ```bash
-# No diretório do projeto
-git clone https://github.com/NatanBack77/cowl.git
-cd Cowl
-npm install
-npm link
+npm install @natabael/cowl
 ```
 
 ## 🚀 Uso
@@ -76,7 +72,7 @@ Este projeto utiliza **Semantic Release** para automatizar versões, CHANGELOG e
    * Gera notas de release (`@semantic-release/release-notes-generator`)
    * Atualiza `CHANGELOG.md` (`@semantic-release/changelog`)
    * Cria release no GitHub (`@semantic-release/github`)
-   * Faz commit de `CHANGELOG.md`, `package.json` e `watcher.js` (`@semantic-release/git`)
+   * Faz commit de `CHANGELOG.md`, `package.json` e `Cowl.js` (`@semantic-release/git`)
 
 ## 🛠️ Desenvolvimento
 
