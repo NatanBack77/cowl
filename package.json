@@ -1,6 +1,6 @@
 {
   "name": "@natabael/cowl",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "Cowl.js",
   "bin": {
     "Cowl": "Cowl.js"
@@ -57,8 +57,7 @@
   },
   "files": [
     "Cowl.js",
-    "CHANGELOG.md",
-    "assets/"
+    "CHANGELOG.md"
   ],
   "publishConfig": {
     "access": "public"
