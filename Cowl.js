@@ -1,89 +1,133 @@
 #!/usr/bin/env node
 
-// watcher.js - CLI para monitorar, compilar e executar código C automaticamente
+// Cowl.js - CLI para monitorar, compilar e executar código C automaticamente
 
-const fs = require('fs');
+// Banner de boas-vindas
+console.log('[35m');
+console.log('   🦉  Cowl - Vigilante do C  🦉');
+console.log('================================');
+console.log('[0m');
+
+/*--------------------------------------------------------------------------
+  Imports e Configurações
+---------------------------------------------------------------------------*/
+const fs    = require('fs');
+const path  = require('path');
 const { exec, spawn } = require('child_process');
-const path = require('path');
 const yargs = require('yargs');
 
-// Parser de argumentos CLI com yargs
+/*--------------------------------------------------------------------------
+  Parser de argumentos com yargs
+---------------------------------------------------------------------------*/
 const argv = yargs
+  .usage('Uso: $0 [--src <arquivo>] [--out <nome>] [--delay <ms>]')
   .option('src', {
     alias: 's',
-    describe: 'Arquivo C a ser monitorado',
-    type: 'string',
-    default: process.env.C_SOURCE_FILE || 'app.c'
+    describe: 'Arquivo C a ser monitorado (se não fornecido, usa o primeiro *.c encontrado)',
+    type: 'string'
   })
   .option('out', {
     alias: 'o',
-    describe: 'Nome do executável C compilado',
+    describe: 'Nome do executável compilado',
     type: 'string',
     default: process.env.C_EXECUTABLE_NAME || 'app'
   })
   .option('delay', {
     alias: 'd',
-    describe: 'Atraso (ms) antes de executar após compilação',
+    describe: 'Delay (ms) antes de executar após compilação',
     type: 'number',
-    default: process.env.EXEC_DELAY_MS || 100
+    default: Number(process.env.EXEC_DELAY_MS) || 100
   })
-  .help()
+  .help('h')
+  .alias('h', 'help')
   .argv;
 
-const C_SOURCE_FILE = argv.src;
+/*--------------------------------------------------------------------------
+  Seleção de arquivo-fonte
+---------------------------------------------------------------------------*/
+let sourceFile = argv.src;
+if (!sourceFile) {
+  // busca arquivos .c no cwd
+  const files = fs.readdirSync(process.cwd()).filter(f => f.endsWith('.c'));
+  if (files.length === 0) {
+    console.error('[cowl][ERRO] Nenhum arquivo .c encontrado no diretório atual.');
+    process.exit(1);
+  }
+  sourceFile = files[0];
+  console.log(`[cowl] Nenhum arquivo especificado. Usando: ${sourceFile}`);
+}
+
+/*--------------------------------------------------------------------------
+  Constantes de execução
+---------------------------------------------------------------------------*/
+const C_SOURCE_FILE    = path.resolve(process.cwd(), sourceFile);
 const C_EXECUTABLE_NAME = argv.out;
 const C_EXECUTABLE_PATH = path.join(process.cwd(), C_EXECUTABLE_NAME);
-const EXEC_DELAY_MS = argv.delay;
+const EXEC_DELAY_MS     = argv.delay;
 
 let cProcess = null;
 let isCompiling = false;
 let pendingCompilation = false;
 
-// Handlers de erro
+/*--------------------------------------------------------------------------
+  Funções utilitárias de log
+---------------------------------------------------------------------------*/
+const logInfo  = msg => console.log(`\x1b[32m[cowl]\x1b[0m ${msg}`);
+const logError = msg => console.error(`\x1b[31m[cowl][ERRO]\x1b[0m ${msg}`);
+
+/*--------------------------------------------------------------------------
+  Validação inicial
+---------------------------------------------------------------------------*/
+if (!fs.existsSync(C_SOURCE_FILE)) {
+  logError(`Arquivo não encontrado: ${C_SOURCE_FILE}`);
+  logInfo('Verifique o caminho ou crie o arquivo antes de executar o watcher.');
+  process.exit(1);
+}
+
+/*--------------------------------------------------------------------------
+  Tratamento de erros não capturados
+---------------------------------------------------------------------------*/
 process.on('uncaughtException', err => {
-  console.error(`\n[ERRO] Exceção não capturada: ${err.message}`);
-  err.stack && console.error(err.stack);
-  cProcess && cProcess.kill();
-});
-process.on('unhandledRejection', (reason, promise) => {
-  console.error(`\n[ERRO] Rejeição não tratada:`, reason);
-  cProcess && cProcess.kill();
+  logError(`Exceção não capturada: ${err.message}`);
+  process.exit(1);
 });
 
-// Compila o código C
+process.on('unhandledRejection', reason => {
+  logError(`Rejeição não tratada: ${reason}`);
+  process.exit(1);
+});
+
+/*--------------------------------------------------------------------------
+  Função: Compilar código C
+---------------------------------------------------------------------------*/
 function compileC() {
   if (isCompiling) {
-    console.log('[watcher] Compilação em andamento, agendando nova...');
+    logInfo('Compilação em andamento, agendando nova...');
     pendingCompilation = true;
     return;
   }
 
   isCompiling = true;
-  console.log(`\n[watcher] Compilando ${C_SOURCE_FILE}...`);
+  logInfo(`Compilando: ${C_SOURCE_FILE}`);
 
   if (cProcess) {
-    cProcess.on('close', code => {
-      console.log(`[watcher] Processo anterior saiu com código ${code}`);
-      cProcess = null;
-      performCompilation();
-    });
     cProcess.kill();
-  } else {
-    performCompilation();
+    cProcess = null;
   }
-}
 
-function performCompilation() {
-  exec(`gcc ${C_SOURCE_FILE} -o ${C_EXECUTABLE_NAME}`, (error, stdout, stderr) => {
+  exec(`gcc "${C_SOURCE_FILE}" -o "${C_EXECUTABLE_NAME}"`, (err, _, stderr) => {
     isCompiling = false;
 
-    if (error) {
-      console.error(`[watcher] Erro de compilação:\n${stderr}`);
-    } else {
-      stderr && console.warn(`[watcher] Avisos:\n${stderr}`);
-      console.log(`[watcher] Compilação concluída.`);
-      executeC();
+    if (err) {
+      return logError(`Falha na compilação:\n${stderr}`);
     }
+
+    if (stderr) {
+      logInfo(`Avisos:\n${stderr}`);
+    }
+
+    logInfo('Compilação concluída.');
+    executeC();
 
     if (pendingCompilation) {
       pendingCompilation = false;
@@ -92,49 +136,60 @@ function performCompilation() {
   });
 }
 
-// Executa o binário C
+/*--------------------------------------------------------------------------
+  Função: Executar binário C
+---------------------------------------------------------------------------*/
 function executeC() {
   if (cProcess) {
-    console.log('[watcher] Já em execução, ignorando.');
+    logInfo('Processo em execução, aguardando término...');
     return;
   }
 
-  console.log(`[watcher] Executando ${C_EXECUTABLE_NAME}...`);
+  logInfo(`Executando: ${C_EXECUTABLE_NAME} em ${EXEC_DELAY_MS}ms`);
   setTimeout(() => {
-    try {
-      cProcess = spawn(C_EXECUTABLE_PATH, [], { stdio: 'inherit' });
-      cProcess.on('error', err => {
-        console.error(`[watcher] Falha ao iniciar: ${err.message}`);
-        cProcess = null;
-      });
-      cProcess.on('close', code => {
-        code !== 0 && console.error(`[watcher] Saiu com código ${code}`);
-        cProcess = null;
-      });
-    } catch (err) {
-      console.error(`[watcher] Erro ao executar: ${err.message}`);
+    cProcess = spawn(C_EXECUTABLE_PATH, [], { stdio: 'inherit' });
+
+    cProcess.on('error', err => {
+      logError(`Erro ao executar: ${err.message}`);
       cProcess = null;
-    }
+    });
+
+    cProcess.on('close', code => {
+      if (code !== 0) logError(`Saída com código: ${code}`);
+      cProcess = null;
+    });
   }, EXEC_DELAY_MS);
 }
 
-// Inicia watcher
+/*--------------------------------------------------------------------------
+  Função: Iniciar watcher no arquivo
+---------------------------------------------------------------------------*/
 function startWatching() {
-  console.log(`[watcher] Observando ${C_SOURCE_FILE}...`);
-  fs.watch(process.cwd() + '/' + C_SOURCE_FILE, { persistent: true }, (ev, fn) => {
-    if (fn && ev === 'change') {
-      console.log(`[watcher] Alteração detectada em ${fn}`);
-      compileC();
-    }
-  });
-  compileC();
+  logInfo(`Observando: ${C_SOURCE_FILE}`);
+
+  try {
+    fs.watch(C_SOURCE_FILE, { persistent: true }, (eventType, filename) => {
+      if (eventType === 'change') {
+        logInfo(`Alteração detectada: ${filename}`);
+        compileC();
+      }
+    });
+  } catch (err) {
+    logError(`Não foi possível iniciar o watcher: ${err.message}`);
+    process.exit(1);
+  }
+
+  compileC(); // Primeira compilação
 }
 
-// Fecha corretamente
+/*--------------------------------------------------------------------------
+  Tratamento de SIGINT para encerramento gracioso
+---------------------------------------------------------------------------*/
 process.on('SIGINT', () => {
-  console.log('\n[watcher] Encerrando...');
-  cProcess && cProcess.kill();
+  logInfo('Encerrando...');
+  if (cProcess) cProcess.kill();
   process.exit(0);
 });
 
+// Iniciar
 startWatching();
