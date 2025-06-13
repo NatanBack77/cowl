@@ -8,10 +8,9 @@ on:
       - 'release/*'
 
 permissions:
-  contents: write       # para push de tags e commits
-  issues: write         # para abrir issues de erro
-  pull-requests: write  # opcional, se usar PRs automáticos
-
+  contents: write       
+  issues: write         
+  pull-requests: write  
 jobs:
   release:
     name: Release & Publish to npm
@@ -24,22 +23,15 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Set up Node.js & authenticate npm
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.8.1'
-          registry-url: 'https://registry.npmjs.org'
-          always-auth: true
-
-      - name: Configure npm auth token
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
 
       - name: Install dependencies
         run: npm ci
 
       - name: Run Semantic Release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # para GitHub
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}     # para npm
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
         run: npx semantic-release
