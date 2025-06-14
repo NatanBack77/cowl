@@ -4,7 +4,7 @@ module.exports = {
     "develop",
     { name: "release/*", channel: "next" }
   ],
-  repositoryUrl: "git@github.com:NatanBack77/cowl.git",
+  repositoryUrl: "https://github.com/NatanBack77/cowl.git",
   plugins: [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
