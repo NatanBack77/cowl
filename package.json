@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NatanBack77/cowl.git"
+    "url": "git+ssh://git@github.com:NatanBack77/cowl.git"
   },
   "author": "Natabael",
   "license": "MIT",

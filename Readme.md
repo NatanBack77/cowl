@@ -1,6 +1,6 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/NatanBack77/Cowl/main/assets/logo.png" alt="Logo do Cowl" width="200" />
-</p>
+</p
 
 <h1 align="center">
   <img src="https://img.shields.io/badge/Bash-Cowl-4EAA25?style=for-the-badge&logo=gnu-bash&logoColor=white" alt="Nome estilizado como Bash">
