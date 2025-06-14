@@ -1,4 +1,4 @@
-name: 🚀 Semantic Release
+name: 🚀 CI & Release
 
 on:
   push:
@@ -9,13 +9,14 @@ on:
 
 permissions:
   contents: write       
+  packages: write       # para publicar no GitHub Packages
   issues: write         
   pull-requests: write  
-jobs:
-  release:
-    name: Release & Publish to npm
-    runs-on: ubuntu-latest
 
+jobs:
+  semantic-release:
+    name: Release & Generate Changelog
+    runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
@@ -33,5 +34,35 @@ jobs:
 
       - name: Run Semantic Release
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}  
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: npx semantic-release
+
+  publish-npm:
+    name: Publish to GitHub Packages
+    needs: semantic-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js & npm registry
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.8.1'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@natanael'           # ajuste para o seu namespace
+
+      - name: Authenticate to GitHub Packages
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_TOKEN }}" > ~/.npmrc
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (se aplicável)
+        run: npm run build        # remova ou ajuste se não precisar de build
+
+      - name: Publish package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: npm publish --access public
