@@ -1,26 +1,38 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/NatanBack77/Cowl/main/assets/logo.png" alt="Logo do Cowl" width="200" />
-</p
+  <img src="https://raw.githubusercontent.com/NatanBack77/Cowl/main/assets/logo.png" alt="Logo do Cowl" width="200"/>
+</p>
 
 <h1 align="center">
-  <img src="https://img.shields.io/badge/Bash-Cowl-4EAA25?style=for-the-badge&logo=gnu-bash&logoColor=white" alt="Nome estilizado como Bash">
-  <img src="https://img.shields.io/badge/JavaScript-Cowl-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="Feito com JavaScript">
+  <img src="https://img.shields.io/badge/Bash-Cowl-4EAA25?style=for-the-badge&logo=gnu-bash&logoColor=white" alt="Bash Badge">
+  <img src="https://img.shields.io/badge/JavaScript-Cowl-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript Badge">
 </h1>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@natabael/cowl"><img src="https://img.shields.io/npm/v/@natabael/cowl.svg" alt="NPM version"></a>
-  <a href="https://opencollective.com/cowl/backers"><img src="https://opencollective.com/cowl/backers/badge.svg" alt="Backers"></a>
-  <a href="https://opencollective.com/cowl/sponsors"><img src="https://opencollective.com/cowl/sponsors/badge.svg" alt="Sponsors"></a>
+  <a href="https://www.npmjs.com/package/@natabael/cowl">
+    <img src="https://img.shields.io/npm/v/@natabael/cowl.svg" alt="NPM version">
+  </a>
+  <a href="https://opencollective.com/cowl/backers">
+    <img src="https://opencollective.com/cowl/backers/badge.svg" alt="Backers">
+  </a>
+  <a href="https://opencollective.com/cowl/sponsors">
+    <img src="https://opencollective.com/cowl/sponsors/badge.svg" alt="Sponsors">
+  </a>
 </p>
 
-# cowl
+<h1 align="center">Cowl 🦉</h1>
 
-CLI para monitorar, compilar e executar código C automaticamente. Inspirado na coruja vigilante.
+<p align="center">
+  CLI para monitorar, compilar e executar código C automaticamente. <br>
+  Inspirado na coruja vigilante, que observa e age no momento certo.
+</p>
+
+---
 
 ## 📦 Instalação
 
+### Instalação global via npm:
+
 ```bash
-# Instalação global via npm
 npm install -g @natabael/cowl
 ```
 
