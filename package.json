@@ -1,6 +1,6 @@
 {
   "name": "@natabael/cowl",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "main": "Cowl.js",
   "bin": {
     "cowl": "./Cowl.js"
