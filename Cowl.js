@@ -2,17 +2,26 @@
 
 // Cowl.js - CLI para monitorar, compilar e executar código C automaticamente
 
-// Banner de boas-vindas
-console.log('[35m');
+/*--------------------------------------------------------------------------
+  Banner
+---------------------------------------------------------------------------*/
+console.log('\x1b[35m');
+console.log(' ██████╗ ██████╗ ██╗    ██╗██╗     ');
+console.log('██╔════╝██╔═══██╗██║    ██║██║     ');
+console.log('██║     ██║   ██║██║ █╗ ██║██║     ');
+console.log('██║     ██║   ██║██║███╗██║██║     ');
+console.log('╚██████╗╚██████╔╝╚███╔███╔╝███████╗');
+console.log(' ╚═════╝ ╚═════╝  ╚══╝╚══╝ ╚══════╝');
+console.log('');
 console.log('   🦉  Cowl - Vigilante do C  🦉');
 console.log('================================');
-console.log('[0m');
+console.log('\x1b[0m');
 
 /*--------------------------------------------------------------------------
   Imports e Configurações
 ---------------------------------------------------------------------------*/
-const fs    = require('fs');
-const path  = require('path');
+const fs = require('fs');
+const path = require('path');
 const { exec, spawn } = require('child_process');
 const yargs = require('yargs');
 
@@ -28,7 +37,7 @@ const argv = yargs
   })
   .option('out', {
     alias: 'o',
-    describe: 'Nome do executável compilado',
+    describe: 'Nome ou caminho do executável compilado',
     type: 'string',
     default: process.env.C_EXECUTABLE_NAME || 'app'
   })
@@ -47,7 +56,6 @@ const argv = yargs
 ---------------------------------------------------------------------------*/
 let sourceFile = argv.src;
 if (!sourceFile) {
-  // busca arquivos .c no cwd
   const files = fs.readdirSync(process.cwd()).filter(f => f.endsWith('.c'));
   if (files.length === 0) {
     console.error('[cowl][ERRO] Nenhum arquivo .c encontrado no diretório atual.');
@@ -60,10 +68,22 @@ if (!sourceFile) {
 /*--------------------------------------------------------------------------
   Constantes de execução
 ---------------------------------------------------------------------------*/
-const C_SOURCE_FILE    = path.resolve(process.cwd(), sourceFile);
+const C_SOURCE_FILE = path.isAbsolute(sourceFile)
+  ? sourceFile
+  : path.resolve(process.cwd(), sourceFile);
+
 const C_EXECUTABLE_NAME = argv.out;
-const C_EXECUTABLE_PATH = path.join(process.cwd(), C_EXECUTABLE_NAME);
-const EXEC_DELAY_MS     = argv.delay;
+const C_EXECUTABLE_PATH = path.isAbsolute(C_EXECUTABLE_NAME)
+  ? C_EXECUTABLE_NAME
+  : path.resolve(process.cwd(), C_EXECUTABLE_NAME);
+
+const EXEC_DELAY_MS = argv.delay;
+
+// Criar diretório do executável, se necessário
+const outDir = path.dirname(C_EXECUTABLE_PATH);
+if (!fs.existsSync(outDir)) {
+  fs.mkdirSync(outDir, { recursive: true });
+}
 
 let cProcess = null;
 let isCompiling = false;
@@ -72,7 +92,7 @@ let pendingCompilation = false;
 /*--------------------------------------------------------------------------
   Funções utilitárias de log
 ---------------------------------------------------------------------------*/
-const logInfo  = msg => console.log(`\x1b[32m[cowl]\x1b[0m ${msg}`);
+const logInfo = msg => console.log(`\x1b[32m[cowl]\x1b[0m ${msg}`);
 const logError = msg => console.error(`\x1b[31m[cowl][ERRO]\x1b[0m ${msg}`);
 
 /*--------------------------------------------------------------------------
@@ -80,9 +100,15 @@ const logError = msg => console.error(`\x1b[31m[cowl][ERRO]\x1b[0m ${msg}`);
 ---------------------------------------------------------------------------*/
 if (!fs.existsSync(C_SOURCE_FILE)) {
   logError(`Arquivo não encontrado: ${C_SOURCE_FILE}`);
-  logInfo('Verifique o caminho ou crie o arquivo antes de executar o watcher.');
+  const dirFiles = fs.readdirSync(process.cwd()).filter(f => f.endsWith('.c'));
+  if (dirFiles.length > 0) {
+    logInfo(`Talvez você tenha querido usar: ${dirFiles.join(', ')}`);
+  }
   process.exit(1);
 }
+
+logInfo(`Arquivo-fonte: ${C_SOURCE_FILE}`);
+logInfo(`Executável: ${C_EXECUTABLE_PATH}`);
 
 /*--------------------------------------------------------------------------
   Tratamento de erros não capturados
@@ -115,7 +141,7 @@ function compileC() {
     cProcess = null;
   }
 
-  exec(`gcc "${C_SOURCE_FILE}" -o "${C_EXECUTABLE_NAME}"`, (err, _, stderr) => {
+  exec(`gcc "${C_SOURCE_FILE}" -o "${C_EXECUTABLE_PATH}"`, (err, _, stderr) => {
     isCompiling = false;
 
     if (err) {
@@ -145,7 +171,7 @@ function executeC() {
     return;
   }
 
-  logInfo(`Executando: ${C_EXECUTABLE_NAME} em ${EXEC_DELAY_MS}ms`);
+  logInfo(`Executando: ${C_EXECUTABLE_PATH} em ${EXEC_DELAY_MS}ms`);
   setTimeout(() => {
     cProcess = spawn(C_EXECUTABLE_PATH, [], { stdio: 'inherit' });
 
