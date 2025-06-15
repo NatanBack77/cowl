@@ -22,9 +22,6 @@
   "bugs": {
     "url": "https://github.com/NatanBack77/cowl/issues"
   },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
-  },
   "homepage": "https://github.com/NatanBack77/cowl#readme",
   "dependencies": {
     "@natabael/cowl": "^1.0.4",
