@@ -37,38 +37,45 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: npx semantic-release
   publish-npm:
-   name: Publish to GitHub Packages
-   needs: semantic-release
-   runs-on: ubuntu-latest
+    name: Publish to GitHub Packages
+    needs: semantic-release
+    runs-on: ubuntu-latest
 
-   steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-        persist-credentials: true
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          persist-credentials: true
 
-    - uses: actions/setup-node@v4
-      with:
-        node-version: '20.8.1'
-        registry-url: 'https://npm.pkg.github.com'
-        scope: '@natabael'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.8.1'
+          registry-url: 'https://npm.pkg.github.com'  # injeta auth, mas não altera get registry
+          scope: '@natabael'
 
-    - name: Authenticate to GitHub Packages
-      run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" > ~/.npmrc
+      - name: Authenticate & force registry
+        run: |
+          cat <<EOF > ~/.npmrc
+          registry=https://npm.pkg.github.com/
+          @natabael:registry=https://npm.pkg.github.com/
+          //npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}
+          EOF
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Debug npm config & env
-      run: |
-        echo "Registry: $(npm config get registry)"
-        echo "Scope:    $(npm config get @natabael:registry)"
-        env | grep _authToken
+      - name: Debug npm config & env
+        run: |
+          echo "Registry: $(npm config get registry)"
+          echo "Scope:    $(npm config get @natabael:registry)"
+          env | grep _authToken
 
-    - name: Install dependencies
-      run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Build (se houver)
-      run: npm run build
+      - name: Build (se houver)
+        run: npm run build
 
-    - name: Publish package
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: npm publish --access public
+      - name: Publish package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm publish --access public
