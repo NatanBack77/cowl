@@ -9,13 +9,12 @@ on:
 
 permissions:
   contents: write
-  packages: write
   issues: write
   pull-requests: write
-
+  
 jobs:
   semantic-release:
-    name: Release & Changelog
+    name: Release & Changelog (GitHub)
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -38,7 +37,7 @@ jobs:
         run: npx semantic-release
 
   publish-npm:
-    name: Publish to GitHub Packages
+    name: Publish to npmjs.org
     needs: semantic-release
     runs-on: ubuntu-latest
     steps:
@@ -48,10 +47,15 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Set up Node.js
+      - name: Set up Node.js & authenticate
         uses: actions/setup-node@v4
         with:
           node-version: '20.8.1'
+          registry-url: 'https://registry.npmjs.org/'
+
+      - name: Create .npmrc for npmjs.org
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
 
       - name: Install dependencies
         run: npm ci
@@ -59,7 +63,5 @@ jobs:
       - name: Build (if applicable)
         run: npm run build
 
-      - name: Publish package to GitHub Packages
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm publish --access public --registry https://npm.pkg.github.com/
+      - name: Publish to npmjs.org
+        run: npm publish --access public
