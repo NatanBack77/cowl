@@ -1,221 +1,215 @@
 #!/usr/bin/env node
+// Cowl.js – Vigilante do C Otimizado com Logs Aprimorados (UTF-8 no Windows)
+//
+// ATENÇÃO:
+// 1) package.json deve ter: { "type": "module" }
+// 2) Instale dependências com: npm install chokidar yargs chalk ora
 
-// Cowl.js - CLI para monitorar, compilar e executar código C automaticamente
+import fs from 'fs/promises';
+import path from 'path';
+import os from 'os';
+import { spawnSync, spawn } from 'child_process';
+import chokidar from 'chokidar';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
+import chalk from 'chalk';
+import ora from 'ora';
 
-/*--------------------------------------------------------------------------
-  Banner
----------------------------------------------------------------------------*/
-console.log('\x1b[35m');
-console.log(' ██████╗ ██████╗ ██╗    ██╗██╗     ');
-console.log('██╔════╝██╔═══██╗██║    ██║██║     ');
-console.log('██║     ██║   ██║██║ █╗ ██║██║     ');
-console.log('██║     ██║   ██║██║███╗██║██║     ');
-console.log('╚██████╗╚██████╔╝╚███╔███╔╝███████╗');
-console.log(' ╚═════╝ ╚═════╝  ╚══╝╚══╝ ╚══════╝');
-console.log('');
-console.log('   🦉  Cowl - Vigilante do C  🦉');
-console.log('================================');
-console.log('\x1b[0m');
+// — Configurações Globais —
+let silentMode = false;
+const PLATFORM = os.platform();
 
-/*--------------------------------------------------------------------------
-  Imports e Configurações
----------------------------------------------------------------------------*/
-const fs = require('fs');
-const path = require('path');
-const { exec, spawn } = require('child_process');
-const yargs = require('yargs');
+// — Timestamp para logs —
+const timestamp = () => new Date().toLocaleTimeString();
 
-/*--------------------------------------------------------------------------
-  Parser de argumentos com yargs
----------------------------------------------------------------------------*/
-const argv = yargs
-  .usage('Uso: $0 [--src <arquivo>] [--out <nome>] [--delay <ms>]')
-  .option('src', {
-    alias: 's',
-    describe: 'Arquivo C a ser monitorado (se não fornecido, usa o primeiro *.c encontrado)',
-    type: 'string'
-  })
-  .option('out', {
-    alias: 'o',
-    describe: 'Nome ou caminho do executável compilado',
-    type: 'string',
-    default: process.env.C_EXECUTABLE_NAME || 'app'
-  })
-  .option('delay', {
-    alias: 'd',
-    describe: 'Delay (ms) antes de executar após compilação',
-    type: 'number',
-    default: Number(process.env.EXEC_DELAY_MS) || 100
-  })
-  .help('h')
-  .alias('h', 'help')
-  .argv;
+// — Funções de log —
+const log = {
+  info: msg  => !silentMode && console.log(chalk.cyan(`[${timestamp()}] [INFO]`), msg),
+  warn: msg  => !silentMode && console.warn(chalk.yellow(`[${timestamp()}] [WARN]`), msg),
+  error: msg => console.error(chalk.red(`[${timestamp()}] [ERROR]`), msg),
+  success: msg => !silentMode && console.log(chalk.green(`[${timestamp()}] [SUCESSO]`), msg),
+};
 
-/*--------------------------------------------------------------------------
-  Seleção de arquivo-fonte
----------------------------------------------------------------------------*/
-let sourceFile = argv.src;
-if (!sourceFile) {
-  const files = fs.readdirSync(process.cwd()).filter(f => f.endsWith('.c'));
-  if (files.length === 0) {
-    console.error('[cowl][ERRO] Nenhum arquivo .c encontrado no diretório atual.');
+// — Forçar UTF-8 no Windows —
+if (PLATFORM === 'win32') {
+  spawn('cmd', ['/c', 'chcp', '65001'], { stdio: 'ignore', shell: true });
+}
+
+// — Verifica se comando existe —
+function hasCommand(cmd) {
+  const whichCmd = PLATFORM === 'win32' ? 'where' : 'which';
+  const result = spawnSync(whichCmd, [cmd], { stdio: 'ignore' });
+  return result.status === 0;
+}
+
+// — Instalação no Windows via Chocolatey —
+function ensureWindowsDependencies() {
+  log.info('Verificando ambiente Windows...');
+  if (!hasCommand('choco')) {
+    log.warn('Chocolatey não encontrado. Instalando Chocolatey...');
+    console.log(chalk.blue(`
+Passo a passo para instalar Chocolatey:
+1) Abra PowerShell como Administrador
+2) Execute:
+   Set-ExecutionPolicy Bypass -Scope Process -Force
+   iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+`));
     process.exit(1);
+  } else {
+    log.success('Chocolatey detectado. Instalando MinGW...');
+    console.log(chalk.blue('Executando: choco install mingw -y'));
+    spawnSync('choco', ['install', 'mingw', '-y'], { stdio: 'inherit', shell: true });
+    log.success('MinGW instalado.');
+    process.exit(0);
   }
-  sourceFile = files[0];
-  console.log(`[cowl] Nenhum arquivo especificado. Usando: ${sourceFile}`);
 }
 
-/*--------------------------------------------------------------------------
-  Constantes de execução
----------------------------------------------------------------------------*/
-const C_SOURCE_FILE = path.isAbsolute(sourceFile)
-  ? sourceFile
-  : path.resolve(process.cwd(), sourceFile);
-
-const C_EXECUTABLE_NAME = argv.out;
-const C_EXECUTABLE_PATH = path.isAbsolute(C_EXECUTABLE_NAME)
-  ? C_EXECUTABLE_NAME
-  : path.resolve(process.cwd(), C_EXECUTABLE_NAME);
-
-const EXEC_DELAY_MS = argv.delay;
-
-// Criar diretório do executável, se necessário
-const outDir = path.dirname(C_EXECUTABLE_PATH);
-if (!fs.existsSync(outDir)) {
-  fs.mkdirSync(outDir, { recursive: true });
-}
-
-let cProcess = null;
-let isCompiling = false;
-let pendingCompilation = false;
-
-/*--------------------------------------------------------------------------
-  Funções utilitárias de log
----------------------------------------------------------------------------*/
-const logInfo = msg => console.log(`\x1b[32m[cowl]\x1b[0m ${msg}`);
-const logError = msg => console.error(`\x1b[31m[cowl][ERRO]\x1b[0m ${msg}`);
-
-/*--------------------------------------------------------------------------
-  Validação inicial
----------------------------------------------------------------------------*/
-if (!fs.existsSync(C_SOURCE_FILE)) {
-  logError(`Arquivo não encontrado: ${C_SOURCE_FILE}`);
-  const dirFiles = fs.readdirSync(process.cwd()).filter(f => f.endsWith('.c'));
-  if (dirFiles.length > 0) {
-    logInfo(`Talvez você tenha querido usar: ${dirFiles.join(', ')}`);
+// — Localizar compilador e instruções —
+async function findCompiler() {
+  const candidates = PLATFORM === 'darwin' ? ['clang', 'gcc'] : ['gcc'];
+  for (const cmd of candidates) {
+    if (hasCommand(cmd)) {
+      log.info(`Compilador encontrado: ${cmd}`);
+      return cmd;
+    }
   }
+  if (PLATFORM === 'win32') {
+    ensureWindowsDependencies();
+  }
+  log.error('Nenhum compilador encontrado. Instale um compilador C:');
+  if (PLATFORM === 'darwin') console.log(chalk.blue('brew install llvm')); 
+  else console.log(chalk.blue('sudo apt update && sudo apt install -y build-essential'));
   process.exit(1);
 }
 
-logInfo(`Arquivo-fonte: ${C_SOURCE_FILE}`);
-logInfo(`Executável: ${C_EXECUTABLE_PATH}`);
-
-/*--------------------------------------------------------------------------
-  Tratamento de erros não capturados
----------------------------------------------------------------------------*/
-process.on('uncaughtException', err => {
-  logError(`Exceção não capturada: ${err.message}`);
-  process.exit(1);
-});
-
-process.on('unhandledRejection', reason => {
-  logError(`Rejeição não tratada: ${reason}`);
-  process.exit(1);
-});
-
-/*--------------------------------------------------------------------------
-  Função: Compilar código C
----------------------------------------------------------------------------*/
-function compileC() {
-  if (isCompiling) {
-    logInfo('Compilação em andamento, agendando nova...');
-    pendingCompilation = true;
-    return;
+// — Resolução de fonte e saída —
+async function resolveSource(src) {
+  if (src) {
+    const file = src.endsWith('.c') ? src : `${src}.c`;
+    await fs.access(file).catch(() => { log.error(`Arquivo não existe: ${file}`); process.exit(1); });
+    log.info(`Fonte especificada: ${file}`);
+    return path.resolve(file);
   }
-
-  isCompiling = true;
-  logInfo(`Compilando: ${C_SOURCE_FILE}`);
-
-  if (cProcess) {
-    cProcess.kill();
-    cProcess = null;
-  }
-
-  exec(`gcc "${C_SOURCE_FILE}" -o "${C_EXECUTABLE_PATH}"`, (err, _, stderr) => {
-    isCompiling = false;
-
-    if (err) {
-      return logError(`Falha na compilação:\n${stderr}`);
-    }
-
-    if (stderr) {
-      logInfo(`Avisos:\n${stderr}`);
-    }
-
-    logInfo('Compilação concluída.');
-    executeC();
-
-    if (pendingCompilation) {
-      pendingCompilation = false;
-      compileC();
-    }
-  });
+  const list = (await fs.readdir('.')).filter(f => f.endsWith('.c'));
+  if (!list.length) { log.error('Nenhum .c encontrado no diretório atual.'); process.exit(1); }
+  log.info(`Fonte detectada: ${list[0]}`);
+  return path.resolve(list[0]);
 }
 
-/*--------------------------------------------------------------------------
-  Função: Executar binário C
----------------------------------------------------------------------------*/
-function executeC() {
-  if (cProcess) {
-    logInfo('Processo em execução, aguardando término...');
-    return;
-  }
+function resolveOutput(out) {
+  let name = out;
+  if (PLATFORM === 'win32' && !name.endsWith('.exe')) name += '.exe';
+  log.info(`Executável: ${name}`);
+  return path.resolve(name);
+}
 
-  logInfo(`Executando: ${C_EXECUTABLE_PATH} em ${EXEC_DELAY_MS}ms`);
-  setTimeout(() => {
-    cProcess = spawn(C_EXECUTABLE_PATH, [], { stdio: 'inherit' });
+// — Lógica principal —
+async function main() {
+  const argv = yargs(hideBin(process.argv))
+    .usage('Uso: $0 [--src <file>] [--out <name>] [--delay <ms>] [--silent]')
+    .option('src',    { alias: 's', describe: 'Arquivo fonte .c', type: 'string' })
+    .option('out',    { alias: 'o', describe: 'Nome do executável', default: 'app', type: 'string' })
+    .option('delay',  { alias: 'd', describe: 'Delay após build (ms)', default: 100, type: 'number' })
+    .option('silent', { describe: 'Modo silencioso', type: 'boolean', default: false })
+    .help('h').alias('h', 'help')
+    .argv;
 
-    cProcess.on('error', err => {
-      logError(`Erro ao executar: ${err.message}`);
-      cProcess = null;
+  silentMode = argv.silent;
+  const SRC   = await resolveSource(argv.src);
+  const OUT   = resolveOutput(argv.out);
+  const DELAY = argv.delay;
+  const COMP  = await findCompiler();
+
+  let building = false, child = null;
+
+  // — Teclado —
+  function enableInput() {
+    if (!process.stdin.isTTY) return;
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    process.stdin.on('data', data => {
+      const key = data.toString();
+      if (key === '\u0003') { child?.kill(); process.exit(0); }
+      if (!building && !child && key.toLowerCase() === 'r') compileAndRun();
     });
+  }
+  function disableInput() {
+    process.stdin.setRawMode(false);
+    process.stdin.removeAllListeners('data');
+  }
 
-    cProcess.on('close', code => {
-      if (code !== 0) logError(`Saída com código: ${code}`);
-      cProcess = null;
-    });
-  }, EXEC_DELAY_MS);
-}
+  // — Compile & Run —
+  async function compileAndRun() {
+    if (building) return;
+    building = true;
+    if (child) { child.kill(); child = null; }
 
-/*--------------------------------------------------------------------------
-  Função: Iniciar watcher no arquivo
----------------------------------------------------------------------------*/
-function startWatching() {
-  logInfo(`Observando: ${C_SOURCE_FILE}`);
+    const spinner = ora({ text: `Compilando ${path.basename(SRC)}`, spinner: 'dots' }).start();
+    const build = spawn(COMP, [SRC, '-o', OUT], { stdio: 'inherit' });
 
-  try {
-    fs.watch(C_SOURCE_FILE, { persistent: true }, (eventType, filename) => {
-      if (eventType === 'change') {
-        logInfo(`Alteração detectada: ${filename}`);
-        compileC();
+    build.on('exit', async code => {
+      spinner.stop();
+      building = false;
+      if (code === 0) {
+        log.success('Build concluído!');
+        await new Promise(r => setTimeout(r, DELAY));
+        await runExecutable();
+      } else {
+        log.error(`Falha no build (${code})`);
       }
     });
-  } catch (err) {
-    logError(`Não foi possível iniciar o watcher: ${err.message}`);
-    process.exit(1);
   }
 
-  compileC(); // Primeira compilação
+  function runExecutable() {
+    return new Promise(resolve => {
+      disableInput();
+      log.info(`Executando ${path.basename(OUT)}`);
+      console.log(chalk.gray('─'.repeat(40)));
+      child = spawn(OUT, { stdio: 'inherit', env: { ...process.env, LANG: 'en_US.UTF-8' } });
+      child.on('exit', (code, signal) => {
+        console.log(chalk.gray('─'.repeat(40)));
+        log.info(code != null ? `Programa finalizado (${code})` : `Sinal ${signal}`);
+        child = null;
+        enableInput();
+        resolve();
+      });
+    });
+  }
+
+  // — Watcher para .c —
+  const watcher = chokidar.watch(path.dirname(SRC)||'.', {
+    persistent: true,
+    ignoreInitial: true,
+    awaitWriteFinish: { stabilityThreshold: 200, pollInterval: 100 }
+  });
+  watcher.on('change', fp => {
+    if (fp.endsWith('.c')) {
+      log.info(`Alteração em ${path.basename(fp)}: forçando rebuild.`);
+      if (child) { log.warn('Encerrando execução atual...'); child.kill(); }
+      compileAndRun();
+    }
+  });
+  watcher.on('error', err => { log.error(err.message); process.exit(1); });
+
+  // — Banner UI —
+  console.clear();
+  console.log(chalk.magenta.bold(`
+    ██████╗ ██████╗ ██╗     ██╗██╗
+    ██╔════╝██╔═══██╗██║     ██║██║
+    ██║     ██║   ██║██║ █╗ ██║██║
+    ██║     ██║   ██║██║███╗██║██║
+    ╚██████╗╚██████╔╝╚███╔███╔╝███████╗
+     ╚═════╝ ╚═════╝  ╚══╝╚══╝ ╚══════╗
+  `));
+  console.log(chalk.bold.yellow('        🦉  Cowl - Vigilante do C  🦉'));
+  console.log(chalk.gray('='.repeat(50)));
+  log.info(`Delay após build: ${DELAY}ms`);
+  console.log(chalk.gray('='.repeat(50)));
+  console.log(chalk.yellow('Controles: R → rebuild manual | Ctrl+C → sair'));
+
+  // — Start —
+  enableInput();
+  await compileAndRun();
 }
 
-/*--------------------------------------------------------------------------
-  Tratamento de SIGINT para encerramento gracioso
----------------------------------------------------------------------------*/
-process.on('SIGINT', () => {
-  logInfo('Encerrando...');
-  if (cProcess) cProcess.kill();
-  process.exit(0);
-});
-
-// Iniciar
-startWatching();
+main().catch(err => { log.error('Erro fatal:'); console.error(err); process.exit(1); });

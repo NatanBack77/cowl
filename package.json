@@ -25,6 +25,9 @@
   "homepage": "https://github.com/NatanBack77/cowl#readme",
   "dependencies": {
     "@natabael/cowl": "^1.0.4",
+    "chalk": "^5.4.1",
+    "chokidar": "^4.0.3",
+    "ora": "^8.2.0",
     "yargs": "^17.7.2"
   },
   "devDependencies": {

@@ -22,48 +22,76 @@
 <h1 align="center">Cowl 🦉</h1>
 
 <p align="center">
-  CLI para monitorar, compilar e executar código C automaticamente. <br>
+  CLI para monitorar, compilar e executar código C automaticamente em **Windows, Linux e macOS**. <br>
   Inspirado na coruja vigilante, que observa e age no momento certo.
 </p>
+
 
 ---
 
 ## 📦 Instalação
 
-### Instalação global via npm:
+### 🔧 Requisitos
+
+* Node.js v14+ instalado
+* No Windows: PowerShell para instalação do Chocolatey
+
+### 🌐 Instalando via npm
 
 ```bash
+# Globalmente
 npm install -g @natabael/cowl
+
+# Local (dentro do projeto)
+npm install @natabael/cowl
 ```
 
-Ou, para instalar localmente:
+### 🪟 Configuração automática no Windows
+
+Se o Cowl não encontrar um compilador C no Windows, ele verifica o Chocolatey:
+
+* **Sem Chocolatey instalado**: exibe passo a passo para instalar
+* **Com Chocolatey instalado**: executa `choco install mingw -y` e encerra
+
+Você pode rodar manualmente também:
 
 ```bash
-npm install @natabael/cowl
+# Para instalar Chocolatey (executar em PowerShell Admin)
+Set-ExecutionPolicy Bypass -Scope Process -Force
+iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+# Após instalar Chocolatey, instale MinGW:
+choco install mingw -y
 ```
 
 ## 🚀 Uso
 
 ```bash
-# Executa o watcher com padrões:
+# Executa watcher com padrões:
 cowl
 
-# Especifica arquivo-fonte e nome do executável:
-cowl --src=hello.c --out=hello_app
+# Com fonte e saída personalizados:
+cowl --src=meu_codigo.c --out=meu_binario
 ```
+
+### Controles de teclado
+
+* **Ctrl+C**: encerra o Cowl
+* **R** (enquanto não estiver compilando/executando): força rebuild manual
 
 ### Opções
 
-| Flag           | Alias | Descrição                                 | Default |
-| -------------- | ----- | ----------------------------------------- | ------- |
-| `--src <path>` | `-s`  | Arquivo C a ser monitorado                | `app.c` |
-| `--out <name>` | `-o`  | Nome do executável compilado              | `app`   |
-| `--delay <ms>` | `-d`  | Atraso em milissegundos antes de executar | `100`   |
-| `--help`       |       | Exibe ajuda e opções disponíveis          |         |
+| Flag                 | Alias | Descrição                                | Default |
+| -------------------- | ----- | ---------------------------------------- | ------- |
+| `--src &lt;file&gt;` | `-s`  | Arquivo fonte `.c`                       | `app.c` |
+| `--out &lt;name&gt;` | `-o`  | Nome do executável compilado             | `app`   |
+| `--delay &lt;ms&gt;` | `-d`  | Atraso (ms) antes de executar após build | `100`   |
+| `--silent`           |       | Oculta logs INFO e SUCCESS               | `false` |
+| `--help`             | `-h`  | Exibe ajuda e opções                     |         |
 
 ## ⚙️ Variáveis de Ambiente
 
-Você também pode configurar via env:
+Também é possível usar variáveis de ambiente:
 
 ```bash
 export C_SOURCE_FILE=mycode.c
@@ -72,27 +100,20 @@ export EXEC_DELAY_MS=200
 cowl
 ```
 
-## 📄 Configuração de Release (Semantic Release)
+## 🛠️ Funcionalidades Principais
 
-Este projeto utiliza **Semantic Release** para automatizar versões, CHANGELOG e tags no GitHub.
+* **Watcher inteligente**: observa qualquer `.c` no diretório e força rebuild imediato, mesmo em modo interativo
+* **Fallback de compilador**: detecta `gcc`, `clang` ou instala MinGW no Windows via Chocolatey
+* **Logs coloridos** e spinner de build para melhor experiência
+* **Controles manuais**: rebuild com tecla `R`, encerramento com `Ctrl+C`
 
-1. Commit com **Conventional Commits** (`feat:`, `fix:`, `docs:` etc.)
-2. Push em branches `main`, `develop` ou `release/*`
-3. GitHub Actions executa `npx semantic-release` e:
+## 📄 Release e SemVer
 
-   * Analisa commits (`@semantic-release/commit-analyzer`)
-   * Gera notas de release (`@semantic-release/release-notes-generator`)
-   * Atualiza `CHANGELOG.md` (`@semantic-release/changelog`)
-   * Cria release no GitHub (`@semantic-release/github`)
-   * Faz commit de `CHANGELOG.md`, `package.json` e `Cowl.js` (`@semantic-release/git`)
+Usa **Semantic Release** para versionamento:
 
-## 🛠️ Desenvolvimento
-
-```bash
-# Instala dependências dev e roda watcher localmente
-npm install
-npm run dev
-```
+1. Commits seguindo Conventional Commits (`feat:`, `fix:`, `docs:` etc.)
+2. Push em `main`/`develop` -> GitHub Actions roda `npx semantic-release`
+3. Gera `CHANGELOG.md`, cria release e atualiza tags automaticamente
 
 ## 📝 Licença
 
