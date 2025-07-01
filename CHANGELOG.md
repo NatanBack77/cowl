@@ -1,3 +1,10 @@
+## [1.0.10](https://github.com/NatanBack77/cowl/compare/v1.0.9...v1.0.10) (2025-07-01)
+
+
+### Bug Fixes
+
+* **publish:** corrigi problema de de publish no npm, e do packge ([cda761c](https://github.com/NatanBack77/cowl/commit/cda761c2cdc72e0624f4ec8349410e8220fce9d3))
+
 ## [1.0.1](https://github.com/NatanBack77/cowl/compare/v1.0.0...v1.0.1) (2025-07-01)
 
 

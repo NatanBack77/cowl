@@ -1,6 +1,6 @@
 {
   "name": "@natabael/cowl",
-  "version": "0.0.0-sematic-release",
+  "version": "1.0.10",
   "description": "CLI para monitorar, compilar e executar código C automaticamente",
   "main": "Cowl.js",
   "bin": {
@@ -40,7 +40,9 @@
     "semantic-release": "^24.0.0"
   },
   "release": {
-    "branches": ["main"],
+    "branches": [
+      "main"
+    ],
     "plugins": [
       "@semantic-release/commit-analyzer",
       "@semantic-release/release-notes-generator",
