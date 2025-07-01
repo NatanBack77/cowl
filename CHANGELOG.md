@@ -1,3 +1,10 @@
+## [1.0.11](https://github.com/NatanBack77/cowl/compare/v1.0.10...v1.0.11) (2025-07-01)
+
+
+### Bug Fixes
+
+* **publish:** corrigi os bugs de versões ([ea8023d](https://github.com/NatanBack77/cowl/commit/ea8023d879d7cc75ae0847674ff782f9fe79a863))
+
 ## [1.0.10](https://github.com/NatanBack77/cowl/compare/v1.0.9...v1.0.10) (2025-07-01)
 
 
