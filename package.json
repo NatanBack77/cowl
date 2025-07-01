@@ -1,6 +1,7 @@
 {
   "name": "@natabael/cowl",
-  "version": "1.0.8",
+  "version": "1.0.9",
+  "description": "CLI para monitorar, compilar e executar código C automaticamente",
   "main": "Cowl.js",
   "bin": {
     "cowl": "./Cowl.js"
@@ -24,7 +25,6 @@
   },
   "homepage": "https://github.com/NatanBack77/cowl#readme",
   "dependencies": {
-    "@natabael/cowl": "^1.0.4",
     "chalk": "^5.4.1",
     "chokidar": "^4.0.3",
     "ora": "^8.2.0",
@@ -63,6 +63,7 @@
     "CHANGELOG.md"
   ],
   "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
     "access": "public"
   },
   "keywords": [
@@ -71,6 +72,5 @@
     "gcc",
     "compile",
     "cli"
-  ],
-  "description": "CLI para monitorar, compilar e executar código C automaticamente"
+  ]
 }
