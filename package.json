@@ -1,6 +1,6 @@
 {
   "name": "@natabael/cowl",
-  "version": "1.0.12",
+  "version": "1.1.0",
   "description": "CLI para monitorar, compilar e executar código C automaticamente",
   "main": "Cowl.js",
   "bin": {

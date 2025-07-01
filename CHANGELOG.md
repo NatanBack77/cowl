@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/NatanBack77/cowl/compare/v1.0.11...v1.1.0) (2025-07-01)
+
+
+### Features
+
+* **license:** bump version and add license ([bc00119](https://github.com/NatanBack77/cowl/commit/bc00119d90beaab074df1aa00979ac52b259e27e))
+
 ## [1.0.11](https://github.com/NatanBack77/cowl/compare/v1.0.10...v1.0.11) (2025-07-01)
 
 
